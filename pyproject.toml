@@ -1,0 +1,13 @@
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+extend-exclude = ["ofx/include", ".venv-test", ".venv-check"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/fake_daemon.py" = ["E402"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

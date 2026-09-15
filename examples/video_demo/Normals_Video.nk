@@ -1,0 +1,118 @@
+version 17.1 v1
+Root {
+ inputs 0
+ last_frame 48
+ fps 12
+ format "432 768 0 0 432 768 1 MarigoldVideo"
+ proxy_type scale
+ proxy_format "1024 778 0 0 1024 778 1 1K_Super_35(full-ap)"
+ colorManagement Nuke
+ workingSpaceLUT linear
+ monitorLut sRGB
+ monitorOutLUT rec709
+ int8Lut sRGB
+ int16Lut sRGB
+ logLut Cineon
+ floatLut linear
+}
+BackdropNode {
+ inputs 0
+ name Guide
+ tile_color 0x253548ff
+ label "<b>MARIGOLD V2 / VIDEO EXAMPLE</b>\n4 seconds / 12 fps / frames 1-48 / inference long edge 512\nViewer 1 = rendered normals / 2 = source / 3 = live inference\nFrame-independent model; temporal flicker may occur.\nSource: Airam Dato-on / Pexels 35958383 (see README.md)"
+ note_font_size 20
+ xpos -340
+ ypos -230
+ bdwidth 1060
+ bdheight 200
+ z_order -1
+}
+Read {
+ inputs 0
+ file_type png
+ file "\[file dirname \[value root.name]]/source/source.%04d.png"
+ last 48
+ origlast 48
+ raw true
+ name INPUT_VIDEO
+ xpos 300
+ ypos 80
+}
+set N5414c000 [stack 0]
+OFXorg.marigoldv2.normals_v1 {
+ resolution 512
+ seed 2025
+ inputColorspace "sRGB encoded"
+ flipX false
+ flipY false
+ flipZ false
+ cacheRevision 0
+ port 47822
+ autoStart true
+ exitWithHost true
+ name MARIGOLD_NORMALS
+ tile_color 0x65aa8eff
+ label "512 / seed 2025 / signed XYZ"
+ xpos 300
+ ypos 220
+}
+set N5414ca00 [stack 0]
+Write {
+ channels rgba
+ file "\[file dirname \[value root.name]]/normals/normals.%04d.exr"
+ file_type exr
+ datatype "32 bit float"
+ first_part rgba
+ raw true
+ version 48
+ ocioColorspace scene_linear
+ display default
+ view sRGB
+ name WRITE_LIVE_NORMALS
+ xpos 510
+ ypos 360
+}
+push $N5414ca00
+Expression {
+ expr0 r*0.5+0.5
+ expr1 g*0.5+0.5
+ expr2 b*0.5+0.5
+ expr3 a
+ name LIVE_PREVIEW
+ label "XYZ to display RGB"
+ xpos 230
+ ypos 360
+}
+push $N5414c000
+Read {
+ inputs 0
+ file_type exr
+ file "\[file dirname \[value root.name]]/normals/normals.%04d.exr"
+ last 48
+ origlast 48
+ raw true
+ in_colorspace scene_linear
+ out_colorspace scene_linear
+ name SAVED_NORMALS
+ xpos -150
+ ypos 80
+}
+Expression {
+ expr0 r*0.5+0.5
+ expr1 g*0.5+0.5
+ expr2 b*0.5+0.5
+ expr3 a
+ name SAVED_PREVIEW
+ label "XYZ to display RGB"
+ xpos -150
+ ypos 360
+}
+Viewer {
+ inputs 3
+ viewerProcess None
+ render_settings_schema false
+ name VIEW_VIDEO
+ label "1 saved / 2 source / 3 live"
+ xpos 30
+ ypos 540
+}

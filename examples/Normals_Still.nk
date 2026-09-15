@@ -1,0 +1,139 @@
+version 17.1 v1
+Root {
+ inputs 0
+ last_frame 1
+ format "2048 1556 0 0 2048 1556 1 2K_Super_35(full-ap)"
+ proxy_type scale
+ proxy_format "1024 778 0 0 1024 778 1 1K_Super_35(full-ap)"
+ colorManagement Nuke
+ workingSpaceLUT linear
+ monitorLut sRGB
+ monitorOutLUT rec709
+ int8Lut sRGB
+ int16Lut sRGB
+ logLut Cineon
+ floatLut linear
+}
+BackdropNode {
+ inputs 0
+ name Guide
+ tile_color 0x253548ff
+ label "<b>MARIGOLD V2 / READY EXAMPLE</b>\nViewer 1: saved normal preview (ready now)\nViewer 2: source image | Viewer 3: live normal preview\nTo compute your image: replace INPUT_IMAGE, then press 3 in Viewer.\nUse an sRGB JPG/PNG. Live resolution: 512.\nThe saved result on the left stays fixed when the input changes."
+ note_font_size 20
+ xpos -330
+ ypos -260
+ bdwidth 1120
+ bdheight 220
+ z_order -1
+}
+BackdropNode {
+ inputs 0
+ name LiveInference
+ tile_color 0x36544bff
+ label "<b>LIVE MODEL / NEW IMAGES</b>\nReplace the Read image, then view input 3.\nConvert ACEScg / linear EXR to sRGB upstream."
+ note_font_size 20
+ xpos 200
+ bdwidth 590
+ bdheight 490
+ z_order -1
+}
+BackdropNode {
+ inputs 0
+ name SavedResult
+ tile_color 0x354f61ff
+ label "<b>SAVED RESULT / IMMEDIATE PREVIEW</b>\nActual Marigold inference / signed XYZ EXR"
+ note_font_size 20
+ xpos -330
+ bdwidth 480
+ bdheight 490
+ z_order -1
+}
+Read {
+ inputs 0
+ file_type jpeg
+ file "\[file dirname \[value root.name]]/assets/church.jpg"
+ raw true
+ name INPUT_IMAGE
+ tile_color 0x5799bdff
+ label "Replace with your sRGB JPG/PNG / raw"
+ xpos 400
+ ypos 130
+}
+set N95740f00 [stack 0]
+OFXorg.marigoldv2.normals_v1 {
+ resolution 512
+ seed 2025
+ inputColorspace "sRGB encoded"
+ flipX false
+ flipY false
+ flipZ false
+ cacheRevision 0
+ port 47822
+ autoStart true
+ exitWithHost true
+ name MARIGOLD_NORMALS
+ tile_color 0x65aa8eff
+ label "512 / seed 2025 / signed XYZ"
+ xpos 400
+ ypos 260
+}
+set N95741900 [stack 0]
+Write {
+ channels rgba
+ file "\[file dirname \[value root.name]]/renders/live_normals.%04d.exr"
+ file_type exr
+ datatype "32 bit float"
+ first_part rgba
+ raw true
+ ocioColorspace scene_linear
+ display default
+ view sRGB
+ name WRITE_LIVE_NORMALS
+ label "Render signed XYZ / raw float32 EXR"
+ xpos 610
+ ypos 390
+}
+push $N95741900
+Expression {
+ expr0 r*0.5+0.5
+ expr1 g*0.5+0.5
+ expr2 b*0.5+0.5
+ expr3 a
+ name LIVE_PREVIEW
+ label "XYZ to display RGB"
+ xpos 310
+ ypos 390
+}
+push $N95740f00
+Read {
+ inputs 0
+ file_type exr
+ file "\[file dirname \[value root.name]]/renders/normals.0001.exr"
+ raw true
+ in_colorspace scene_linear
+ out_colorspace scene_linear
+ name SAVED_NORMALS
+ tile_color 0x5799bdff
+ label "Saved church normals / raw"
+ xpos -160
+ ypos 130
+}
+Expression {
+ expr0 r*0.5+0.5
+ expr1 g*0.5+0.5
+ expr2 b*0.5+0.5
+ expr3 a
+ name SAVED_PREVIEW
+ label "XYZ to display RGB"
+ xpos -160
+ ypos 360
+}
+Viewer {
+ inputs 3
+ viewerProcess None
+ render_settings_schema false
+ name VIEW_NORMALS
+ label "1 saved / 2 source / 3 live"
+ xpos 70
+ ypos 590
+}
