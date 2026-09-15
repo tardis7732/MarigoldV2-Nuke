@@ -8,7 +8,7 @@
 
 ## 설치
 
-Windows x64, CUDA GPU, Git, uv, 외부 Python이 필요합니다. RTX 5070 Ti 16GB에서 긴 변 512를 검증했습니다. 일반 Nuke 17.1v1에서 실행했으며 NukeX는 필요하지 않습니다.
+Windows x64, CUDA GPU, Git, uv, 외부 Python이 필요합니다. RTX 5070 Ti 16GB에서 긴 변 512를 검증했습니다.
 
 ```powershell
 git clone https://github.com/tardis7732/MarigoldV2-Nuke.git

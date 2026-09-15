@@ -47,7 +47,7 @@ This is an experimental community integration for whole-image normals. Plane fit
 
 ## Requirements
 
-- Windows x64 and licensed Nuke with third-party OFX support. **NukeX is not required** for the tested workflow.
+- Windows x64 and licensed Nuke with third-party OFX support.
 - NVIDIA CUDA GPU. **512 long edge was tested on an RTX 5070 Ti 16GB**; memory headroom is small. Other GPU configurations have not been verified here.
 - Driver compatible with the PyTorch CUDA 12.8 build, [Git](https://git-scm.com/), [uv](https://docs.astral.sh/uv/) and an external Python installation for the launcher.
 - Approximately **43GB of checkpoint downloads**, plus Python packages and working space. Weights are downloaded separately from upstream.
