@@ -19,6 +19,14 @@ Connect an image, view the normals, and write signed XYZ to EXR. The model runs 
 
 </details>
 
+## MoGe-3 vs Marigold V2
+
+![Same MoGe-nuke sample: source, MoGe-3, Marigold V2](docs/media/model-comparison.png)
+
+Both models processed the same cake image from the referenced MoGe-nuke README on an H200. In this example, Marigold preserves more visible eye, mouth and strawberry detail; MoGe produces smoother broad surfaces. This is a qualitative comparison of one image without ground-truth normals.
+
+[Matched detail crops, settings and measurements](docs/MODEL_COMPARISON.md) · [Nuke comparison with signed EXRs](https://github.com/tardis7732/MarigoldV2-Nuke/releases/download/v0.1.0/MarigoldV2-Nuke-model-comparison.zip)
+
 ## Video example
 
 ![Original footage on the left and frame-by-frame Marigold normals on the right](docs/media/video-comparison.gif)
@@ -48,7 +56,7 @@ This is an experimental community integration for whole-image normals. Plane fit
 ## Requirements
 
 - Windows x64 and licensed Nuke with third-party OFX support.
-- NVIDIA CUDA GPU. **512 long edge was tested on an RTX 5070 Ti 16GB**; memory headroom is small. Other GPU configurations have not been verified here.
+- NVIDIA CUDA GPU. **512 long edge was tested on an RTX 5070 Ti 16GB**; memory headroom is small. The one-image comparison also tested the Python backend at 544 × 800 on an H200.
 - Driver compatible with the PyTorch CUDA 12.8 build, [Git](https://git-scm.com/), [uv](https://docs.astral.sh/uv/) and an external Python installation for the launcher.
 - Approximately **43GB of checkpoint downloads**, plus Python packages and working space. Weights are downloaded separately from upstream.
 - Visual Studio C++ Build Tools for a source build, or the prebuilt Windows plugin from Releases.
@@ -148,3 +156,7 @@ Linux/WSL helpers are provided; the documented end-to-end runs used native Windo
 - Screenshots show the actual Nuke example graph and output. Nuke is a Foundry product; this project is an independent integration.
 
 See [LICENSE](LICENSE), [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [licenses/](licenses/).
+
+## Reference GitHub
+
+**[Sumit Chatterjee / MoGe-nuke](https://github.com/sumitchatterjee13/MoGe-nuke)** — the reference for this project's OFX frontend and mini host, and the source of the cake image used in the model comparison. Original MIT attribution is retained.

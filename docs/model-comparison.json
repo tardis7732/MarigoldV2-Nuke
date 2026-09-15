@@ -1,0 +1,114 @@
+{
+  "environment": {
+    "python": "3.10.19",
+    "platform": "Linux",
+    "driver": "580.126.20",
+    "date": "2026-09-16",
+    "packages": {
+      "torch": "2.10.0+cu128",
+      "torchvision": "0.25.0+cu128",
+      "diffusers": "0.38.0",
+      "accelerate": "1.13.0",
+      "transformers": "5.4.0",
+      "bitsandbytes": "0.49.2",
+      "safetensors": "0.8.0",
+      "numpy": "2.2.5",
+      "opencv-python-headless": "4.13.0.92",
+      "OpenEXR": "3.4.15"
+    }
+  },
+  "revisions": {
+    "adapter": "2f999d1",
+    "moge_nuke": "4e9213e4a2a77d623daff5e301e80262e3d9d7fb",
+    "marigold_v2": "18466672fb8661152434a0efe1184939164cda19",
+    "qwen_weights": "d3968ef930e841f4c73640fb8afa3b306a78167e",
+    "marigold_weights": "cdf9810fb690886391a63aec012b5f501064fb0d"
+  },
+  "results": {
+    "moge3": {
+      "source": "MoGe-nuke/docs/sample.jpg",
+      "source_sha256": "7ddd187d91ebc2cf626bc51a26e1fc71d478237ce348732ae547f83655f05260",
+      "source_size": [
+        547,
+        800
+      ],
+      "gpu": "NVIDIA H200",
+      "torch": "2.10.0+cu128",
+      "input_encoding": "srgb",
+      "display": "RGB = XYZ * 0.5 + 0.5; no gamma; invalid pixels black",
+      "ground_truth": false,
+      "settings": {
+        "width": 547,
+        "height": 800,
+        "refine_steps": 3,
+        "resolution_level": 9,
+        "num_tokens": 0,
+        "fp16": 0,
+        "input_colorspace": "srgb",
+        "normal_space": "nuke",
+        "apply_mask": 1
+      },
+      "model_sha256": "685c5bc2bc1acfac86b928255c2c5397a7de4824870ade392e2ba1f74c2ce52b",
+      "load_seconds": 22.010679598897696,
+      "first_inference_seconds": 22.553389793261886,
+      "warm_inference_seconds": 1.592884374782443,
+      "inference_seconds_reported": 1.5593879222869873,
+      "peak_allocated_bytes": 7897281024,
+      "peak_reserved_bytes": 9116319744,
+      "axes": "MoGe-nuke normal_space=nuke: raw OpenCV XYZ * [1,-1,-1]",
+      "max_unit_error_valid": 1.7881393432617188e-07,
+      "valid_fraction": 1.0
+    },
+    "marigold_native": {
+      "source": "MoGe-nuke/docs/sample.jpg",
+      "source_sha256": "7ddd187d91ebc2cf626bc51a26e1fc71d478237ce348732ae547f83655f05260",
+      "source_size": [
+        547,
+        800
+      ],
+      "gpu": "NVIDIA H200",
+      "torch": "2.10.0+cu128",
+      "input_encoding": "srgb",
+      "display": "RGB = XYZ * 0.5 + 0.5; no gamma; invalid pixels black",
+      "ground_truth": false,
+      "settings": {
+        "resolution": 0,
+        "inference_size": [
+          544,
+          800
+        ],
+        "seed": 2025,
+        "quantization": "NF4",
+        "compute": "bf16"
+      },
+      "load_seconds": 83.02718402631581,
+      "first_inference_seconds": 1.1377152688801289,
+      "warm_inference_seconds": 0.5058610327541828,
+      "peak_allocated_bytes": 15550040064,
+      "peak_reserved_bytes": 17104371712,
+      "axes": "Marigold V2 native / Hypersim camera normals; no axis flip",
+      "max_unit_error_valid": 1.7881393432617188e-07,
+      "valid_fraction": 1.0
+    }
+  },
+  "artifact_sha256": {
+    "README.md": "6bfdbc9acd2238ea3639c39f954e66d23fcf9fd73d76ae10094027f20c65cfea",
+    "Normals_Comparison.nk": "2134e45156a75dff4a9d9ec80fdb9f0e02d888c9dffa132cedbeefe8c0155d91",
+    "sample.jpg": "7ddd187d91ebc2cf626bc51a26e1fc71d478237ce348732ae547f83655f05260",
+    "moge3.exr": "1514cbaaae2e7cb758d86560647355c4e5a7cc198f5936f0ee6aefbca0bfe347",
+    "marigold_native.exr": "ab61b76953f35400a8967f24e806ca8831712b3ac8a946876c5d718d0d66013c",
+    "moge3.png": "a65e99ce30319681e1d5685f86edcd80ef68be405189fe414398e3037b0a391d",
+    "marigold_native.png": "d5adb3f72918206f41c755ba740b298387743c11f1443f986717b84cefe9d631",
+    "comparison.png": "eacf1adebed95824d6389f450f5ace71bfdb4bda4bb99718c8fe41945c2648b8",
+    "details.png": "6c060b6032f6d989236e707da04625b7f304abc04b76eeca7204c42b80642979"
+  },
+  "nuke_validation": {
+    "version": "17.1v1",
+    "reopened": true,
+    "dimensions": [
+      547,
+      800
+    ],
+    "finite_unit_vector_samples": true
+  }
+}

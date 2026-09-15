@@ -20,3 +20,6 @@ config/frontend.json
 /examples/video_demo/*
 !/examples/video_demo/README.md
 !/examples/video_demo/Normals_Video.nk
+/examples/model_comparison/*
+!/examples/model_comparison/README.md
+!/examples/model_comparison/Normals_Comparison.nk

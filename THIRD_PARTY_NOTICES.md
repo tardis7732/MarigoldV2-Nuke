@@ -28,3 +28,9 @@ by this repository's MIT code license.
 Nuke screenshots show this integration's graph and generated output in the
 Foundry Nuke application. This is an independent community project and does not
 claim endorsement by Foundry, Huawei, Qwen, or the source authors.
+
+The cake image used in the one-image MoGe-3 / Marigold V2 comparison is
+`docs/sample.jpg` from the pinned MoGe-nuke revision above. It appears in the
+comparison media and example archive with derived normal maps. The source
+repository is MIT licensed; its license is preserved in `licenses/MoGe-nuke-MIT.txt`.
+No authorship of the source image is claimed here.

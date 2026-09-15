@@ -1,0 +1,86 @@
+version 17.1 v1
+Root {
+ inputs 0
+ last_frame 1
+ format "547 800 0 0 547 800 1 ModelComparison"
+ proxy_type scale
+ proxy_format "1024 778 0 0 1024 778 1 1K_Super_35(full-ap)"
+ colorManagement Nuke
+ workingSpaceLUT linear
+ monitorLut sRGB
+ monitorOutLUT rec709
+ int8Lut sRGB
+ int16Lut sRGB
+ logLut Cineon
+ floatLut linear
+}
+Read {
+ inputs 0
+ file_type exr
+ file "\[file dirname \[value root.name]]/marigold_native.exr"
+ raw true
+ in_colorspace scene_linear
+ out_colorspace scene_linear
+ name MARIGOLD_NATIVE
+ label "Marigold V2 / 544 x 800 / seed 2025"
+ xpos 520
+}
+Expression {
+ expr0 "a > 0.5 ? r*0.5+0.5 : 0"
+ expr1 "a > 0.5 ? g*0.5+0.5 : 0"
+ expr2 "a > 0.5 ? b*0.5+0.5 : 0"
+ expr3 1
+ name MARIGOLD_NATIVE_PREVIEW
+ label "Display XYZ * 0.5 + 0.5; mask invalid pixels"
+ xpos 520
+ ypos 140
+}
+Read {
+ inputs 0
+ file_type exr
+ file "\[file dirname \[value root.name]]/moge3.exr"
+ raw true
+ in_colorspace scene_linear
+ out_colorspace scene_linear
+ name MOGE3
+ label "MoGe-3 / level 9 / refine 3 / Nuke axes"
+ xpos 260
+}
+Expression {
+ expr0 "a > 0.5 ? r*0.5+0.5 : 0"
+ expr1 "a > 0.5 ? g*0.5+0.5 : 0"
+ expr2 "a > 0.5 ? b*0.5+0.5 : 0"
+ expr3 1
+ name MOGE3_PREVIEW
+ label "Display XYZ * 0.5 + 0.5; mask invalid pixels"
+ xpos 260
+ ypos 140
+}
+Read {
+ inputs 0
+ file_type jpeg
+ file "\[file dirname \[value root.name]]/sample.jpg"
+ raw true
+ in_colorspace scene_linear
+ out_colorspace scene_linear
+ name SOURCE
+ label "MoGe-nuke README sample / sRGB"
+ xpos 0
+}
+Viewer {
+ inputs 3
+ input_number 2
+ viewerProcess None
+ render_settings_schema false
+ name VIEW_COMPARISON
+ xpos 500
+ ypos 300
+}
+StickyNote {
+ inputs 0
+ name COMPARISON_GUIDE
+ label "BAKED CLOUD RESULTS / ONE IMAGE\nViewer 1: source / 2: MoGe-3 / 3: Marigold V2 native\nSelect A/B Viewer inputs to wipe. Viewer process: None.\nRead EXRs store signed XYZ; Expressions are display only.\nNo live model loading. No ground-truth normals for this photograph."
+ note_font_size 22
+ xpos -200
+ ypos -220
+}

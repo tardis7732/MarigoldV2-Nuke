@@ -6,6 +6,14 @@
 
 ![실제 Nuke 화면](media/nuke-normals.png)
 
+## MoGe-3와 같은 이미지 비교
+
+![원본 / MoGe-3 / Marigold V2](media/model-comparison.png)
+
+참고한 MoGe-nuke README의 케이크 사진 한 장을 H200에서 두 모델로 처리했습니다. 이 예제에서 Marigold는 눈·입과 딸기 표면을 더 또렷하게 표현하고, MoGe는 큰 곡면을 더 매끈하게 표현합니다. 정답 노멀이 없는 단일 이미지의 시각적 비교입니다.
+
+[확대 비교·설정·측정 결과](MODEL_COMPARISON.md) · [Nuke 비교 예제와 EXR 다운로드](https://github.com/tardis7732/MarigoldV2-Nuke/releases/download/v0.1.0/MarigoldV2-Nuke-model-comparison.zip)
+
 ## 설치
 
 Windows x64, CUDA GPU, Git, uv, 외부 Python이 필요합니다. RTX 5070 Ti 16GB에서 긴 변 512를 검증했습니다.
@@ -48,3 +56,7 @@ Release의 `MarigoldV2-Nuke-examples.zip`을 프로젝트 폴더에 풀어 주�
 데몬 오류는 `output/daemon.log`를 확인합니다. 캐시가 남으면 **Clear selected node cache**를 실행하거나 `cacheRevision`을 올리세요. 바이너리 업데이트 후에는 Nuke를 완전히 재시작해야 합니다.
 
 출처와 라이선스: [Third-party notices](../THIRD_PARTY_NOTICES.md).
+
+## 참고 GitHub
+
+**[Sumit Chatterjee / MoGe-nuke](https://github.com/sumitchatterjee13/MoGe-nuke)**: 이번 통합에서 참고한 저장소입니다. OFX 프런트엔드와 미니 호스트의 기반이며, 모델 비교에 사용한 케이크 예제의 출처입니다. 원본 MIT 저작권 고지를 보존했습니다.
