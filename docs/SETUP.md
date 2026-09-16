@@ -1,6 +1,6 @@
 # Advanced setup
 
-`tools/setup_windows.ps1` creates `.venv-engine`, installs Python 3.10 / PyTorch CUDA 12.8 and the pinned Marigold package, downloads normals assets and writes `config/launcher.json`.
+`tools/setup_windows.ps1` creates `.venv-engine`, installs Python 3.10 / PyTorch CUDA 12.8 and the pinned Marigold package, downloads normals and Depth assets and writes `config/launcher.json`.
 
 ## Existing native environment
 
@@ -34,4 +34,10 @@ WSL localhost forwarding must work. The server binds only to `127.0.0.1`. Window
 - Clear node caches after restarting the server or changing weights.
 - Cancelled startup waits leave the daemon running and do not cache an error. GPU inference itself still waits for a response or timeout.
 
-Only the Qwen transformer/VAE, Marigold normals trainables and normals prompt embeddings are downloaded. Revisions are pinned in `config/upstream.json` and `tools/download_normals.py`. CPU offload and automatic lower-resolution retries are not implemented.
+The Qwen transformer/VAE plus Marigold normals and Depth Log-stage2 trainables/prompt embeddings are downloaded. `tools/download_normals.py --task normals` or `--task depth` restricts task downloads; the default is `all`. Revisions are pinned in `config/upstream.json` and `tools/download_normals.py`. CPU offload and automatic lower-resolution retries are not implemented.
+
+The daemon keeps one quantized backbone on the GPU and caches each loaded task's trainables in system RAM. Switching Output replaces the complete task LoRA/decoder weights and prompt graph. This avoids two full GPU models, but switching takes extra time and only the last result per node is cached. Requests execute serially. Use the same port for nodes that should share the engine.
+
+For development while an older binary is loaded in Nuke, build with `ofx/build.ps1 -BuildDirectory build-depth` and set `MARIGOLD_OFX_BUILD_DIR` to that absolute build directory for a **new** test process. Restart Nuke when installing a replacement binary.
+
+`install.ps1 -SkipBuild -BuildDirectory build-depth` registers that build directory for subsequent Nuke sessions without replacing the DLL currently loaded by an open session. The installer stores this local path in ignored `config/frontend.json`.

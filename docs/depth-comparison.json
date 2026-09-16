@@ -1,0 +1,95 @@
+{
+  "moge": {
+    "source_sha256": "7ddd187d91ebc2cf626bc51a26e1fc71d478237ce348732ae547f83655f05260",
+    "source_size": [
+      547,
+      800
+    ],
+    "gpu": "NVIDIA H200",
+    "torch": "2.10.0+cu128",
+    "ground_truth": false,
+    "seed": 2025,
+    "model_sha256": "685c5bc2bc1acfac86b928255c2c5397a7de4824870ade392e2ba1f74c2ce52b",
+    "settings": {
+      "width": 547,
+      "height": 800,
+      "refine_steps": 3,
+      "resolution_level": 9,
+      "num_tokens": 0,
+      "fp16": 0,
+      "input_colorspace": "srgb",
+      "normal_space": "nuke",
+      "apply_mask": 1
+    },
+    "representation": "MoGe metric depth estimate",
+    "load_seconds": 27.58410162292421,
+    "first_inference_seconds": 18.719105042517185,
+    "warm_inference_seconds": 0.2955189850181341,
+    "peak_allocated_bytes": 7897281024,
+    "peak_reserved_bytes": 9116319744,
+    "raw_range": [
+      1.5045855045318604,
+      2.7669215202331543
+    ],
+    "valid_fraction": 1.0,
+    "display": {
+      "space": "log-depth",
+      "percentiles": [
+        2,
+        98
+      ],
+      "range": [
+        0.43306898772716523,
+        0.9982454800605773
+      ],
+      "far": "white",
+      "normalization": "independent per model; display only"
+    }
+  },
+  "marigold": {
+    "source_sha256": "7ddd187d91ebc2cf626bc51a26e1fc71d478237ce348732ae547f83655f05260",
+    "source_size": [
+      547,
+      800
+    ],
+    "gpu": "NVIDIA H200",
+    "torch": "2.10.0+cu128",
+    "ground_truth": false,
+    "seed": 2025,
+    "settings": {
+      "resolution": 0,
+      "inference_size": [
+        544,
+        800
+      ],
+      "quantization": "NF4",
+      "compute": "bf16"
+    },
+    "representation": "affine-invariant log-depth (Log-stage2); not metric",
+    "load_seconds": 104.23748086579144,
+    "first_inference_seconds": 1.1581221148371696,
+    "warm_inference_seconds": 0.5294758640229702,
+    "peak_allocated_bytes": 15550040064,
+    "peak_reserved_bytes": 17104371712,
+    "raw_range": [
+      -1.0,
+      1.0
+    ],
+    "valid_fraction": 1.0,
+    "depth_roundtrip_max_abs": 0.0,
+    "normal_roundtrip_max_abs": 0.0,
+    "display": {
+      "space": "log-depth",
+      "percentiles": [
+        2,
+        98
+      ],
+      "range": [
+        -0.98046875,
+        0.9941548705101013
+      ],
+      "far": "white",
+      "normalization": "independent per model; display only"
+    }
+  }
+}

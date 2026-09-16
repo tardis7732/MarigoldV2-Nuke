@@ -60,7 +60,7 @@ extern char **environ;
 #define PLUGIN_ID "org.marigoldv2.normals"
 #define PLUGIN_LABEL "MarigoldV2Normals"
 #define PLUGIN_VERSION_MAJOR 1
-#define PLUGIN_VERSION_MINOR 0
+#define PLUGIN_VERSION_MINOR 1
 
 // Where the repo (venv, daemon, models) lives is discovered at load time, in
 // this order:
@@ -97,12 +97,13 @@ static void logf(const char *fmt, ...) {
 // ---------------------------------------------------------------------------
 
 struct Params {
+    int outputMode = 0;
     int resolution = 512, seed = 2025, colorspace = 1;
     int flipX = 0, flipY = 0, flipZ = 0, cacheRevision = 0;
     std::string python, daemon;
     int port = kDefaultPort, autoStart = 1, exitWithHost = 1;
     bool sameInference(const Params &o) const {
-        return resolution == o.resolution && seed == o.seed && colorspace == o.colorspace &&
+        return outputMode == o.outputMode && resolution == o.resolution && seed == o.seed && colorspace == o.colorspace &&
             flipX == o.flipX && flipY == o.flipY && flipZ == o.flipZ &&
             cacheRevision == o.cacheRevision && port == o.port &&
             python == o.python && daemon == o.daemon;
@@ -111,7 +112,7 @@ struct Params {
 struct Instance {
     OfxImageEffectHandle effect = nullptr;
     OfxImageClipHandle source = nullptr, output = nullptr;
-    OfxParamHandle pResolution, pSeed, pColorspace, pFlipX, pFlipY, pFlipZ,
+    OfxParamHandle pOutputMode, pResolution, pSeed, pColorspace, pFlipX, pFlipY, pFlipZ,
         pCacheRevision, pPython, pDaemon, pPort, pAutoStart, pExitWithHost;
     sock_t sock = INVALID_SOCKET;
     int connectedPort = 0;
@@ -280,6 +281,7 @@ static double getDoubleParam(OfxParamHandle h, double t) {
 
 static Params readParams(Instance *in, double t) {
     Params p;
+    p.outputMode = getIntParam(in->pOutputMode, t);
     p.resolution = getIntParam(in->pResolution, t);
     p.seed = getIntParam(in->pSeed, t);
     p.colorspace = getIntParam(in->pColorspace, t);
@@ -613,9 +615,9 @@ static bool daemonInfer(Instance *in, const Params &p, int w, int h,
     char hdr[512];
     snprintf(hdr, sizeof(hdr),
              "{\"cmd\":\"infer\",\"width\":%d,\"height\":%d,\"resolution\":%d,"
-             "\"seed\":%d,\"input_colorspace\":\"%s\",\"flip_x\":%d,\"flip_y\":%d,\"flip_z\":%d}",
+             "\"seed\":%d,\"input_colorspace\":\"%s\",\"flip_x\":%d,\"flip_y\":%d,\"flip_z\":%d,\"task\":\"%s\"}",
              w, h, p.resolution, p.seed, p.colorspace == 0 ? "linear_srgb" : "srgb",
-             p.flipX, p.flipY, p.flipZ);
+             p.flipX, p.flipY, p.flipZ, p.outputMode == 1 ? "depth" : "normals");
     uint32_t jlen = (uint32_t)strlen(hdr);
     uint32_t dlen = (uint32_t)(rgb.size() * sizeof(float));
 
@@ -684,6 +686,17 @@ static bool daemonInfer(Instance *in, const Params &p, int w, int h,
             payload.size() != (size_t)4 * w * h) {
             err = "daemon reply has unexpected shape";
             return false;
+        }
+        // An older daemon silently ignores unknown request fields. Never label
+        // its normals as depth: require the new server's explicit task reply.
+        if (p.outputMode == 1) {
+            size_t task = msg.find("\"task\"");
+            size_t colon = task == std::string::npos ? task : msg.find(':', task + 6);
+            size_t value = colon == std::string::npos ? colon : msg.find_first_not_of(" \t\r\n", colon + 1);
+            if (value == std::string::npos || msg.compare(value, 7, "\"depth\"") != 0) {
+                err = "Daemon did not confirm depth output. Update and restart the engine.";
+                return false;
+            }
         }
         planes.swap(payload);
         logf("frame %dx%d resolution=%d: %s", w, h, p.resolution, msg.c_str());
@@ -781,10 +794,11 @@ static OfxStatus describe(OfxImageEffectHandle effect) {
     gEffect->getPropertySet(effect, &props);
     gProp->propSetString(props, kOfxPropLabel, 0, PLUGIN_LABEL);
     gProp->propSetString(props, kOfxPropShortLabel, 0, PLUGIN_LABEL);
-    gProp->propSetString(props, kOfxPropLongLabel, 0, "Marigold V2 surface normals");
+    gProp->propSetString(props, kOfxPropLongLabel, 0, "Marigold V2 surface normals and depth");
     gProp->propSetString(props, kOfxImageEffectPluginPropGrouping, 0, "ML");
     gProp->propSetString(props, kOfxPropPluginDescription, 0,
-                         "Whole-image surface normals from Marigold V2. RGB = signed XYZ, alpha = 1. "
+                         "Marigold V2: normals output is signed XYZ; depth output is raw relative log-depth in RGB. "
+                         "Use the Nuke Depth group to create depth.Z. Alpha = 1. "
                          "The model runs in a resident Python daemon; this node is the client.");
     gProp->propSetString(props, kOfxImageEffectPropSupportedContexts, 0, kOfxImageEffectContextFilter);
     gProp->propSetString(props, kOfxImageEffectPropSupportedContexts, 1, kOfxImageEffectContextGeneral);
@@ -824,6 +838,12 @@ static OfxStatus describeInContext(OfxImageEffectHandle effect) {
     gEffect->getParamSet(effect, &set);
     OfxPropertySetHandle p;
 
+    p = defineParam(set, kOfxParamTypeChoice, "outputMode", "output",
+        "Normals: signed camera XYZ. Depth: raw affine-invariant log-depth, not meters. "
+        "Use ML > Marigold V2 > Depth for depth.Z and a display preview.", "Normals");
+    gProp->propSetString(p, kOfxParamPropChoiceOption, 0, "Normals");
+    gProp->propSetString(p, kOfxParamPropChoiceOption, 1, "Depth (relative log)");
+    gProp->propSetInt(p, kOfxParamPropDefault, 0, 0);
     p = defineParam(set, kOfxParamTypeInteger, "resolution", "inference long edge",
         "512 is the initial setting for 16 GB GPUs; memory fit is not guaranteed. "
         "0 = native. Aspect is preserved to a multiple of 16. Output returns at source size.", "Normals");
@@ -885,9 +905,9 @@ static OfxStatus describeInContext(OfxImageEffectHandle effect) {
     // pages -> tabs in Nuke
     OfxPropertySetHandle pg;
     gParam->paramDefine(set, kOfxParamTypePage, "pageNormals", &pg);
-    gProp->propSetString(pg, kOfxPropLabel, 0, "Normals");
-    const char *mainKids[] = {"resolution", "seed", "inputColorspace", "flipX", "flipY", "flipZ", "cacheRevision"};
-    for (int i = 0; i < 7; ++i) gProp->propSetString(pg, kOfxParamPropPageChild, i, mainKids[i]);
+    gProp->propSetString(pg, kOfxPropLabel, 0, "Marigold V2");
+    const char *mainKids[] = {"outputMode", "resolution", "seed", "inputColorspace", "flipX", "flipY", "flipZ", "cacheRevision"};
+    for (int i = 0; i < 8; ++i) gProp->propSetString(pg, kOfxParamPropPageChild, i, mainKids[i]);
     gParam->paramDefine(set, kOfxParamTypePage, "pageSetup", &pg);
     gProp->propSetString(pg, kOfxPropLabel, 0, "Setup");
     const char *setupKids[] = {"pythonExe", "daemonScript", "port", "autoStart", "exitWithHost"};
@@ -903,6 +923,7 @@ static OfxStatus createInstance(OfxImageEffectHandle effect) {
     OfxParamSetHandle set;
     gEffect->getParamSet(effect, &set);
     struct { const char *name; OfxParamHandle *dst; } table[] = {
+        {"outputMode", &in->pOutputMode},
         {"resolution", &in->pResolution}, {"seed", &in->pSeed},
         {"inputColorspace", &in->pColorspace}, {"flipX", &in->pFlipX},
         {"flipY", &in->pFlipY}, {"flipZ", &in->pFlipZ}, {"cacheRevision", &in->pCacheRevision},

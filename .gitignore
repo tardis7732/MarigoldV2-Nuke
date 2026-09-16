@@ -23,3 +23,6 @@ config/frontend.json
 /examples/model_comparison/*
 !/examples/model_comparison/README.md
 !/examples/model_comparison/Normals_Comparison.nk
+/examples/depth_comparison/*
+!/examples/depth_comparison/README.md
+!/examples/depth_comparison/Depth_Comparison.nk

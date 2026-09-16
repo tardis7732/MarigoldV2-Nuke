@@ -2,6 +2,7 @@
 
 import math
 import os
+import sys
 from pathlib import Path
 
 import nuke
@@ -36,5 +37,41 @@ for x, y in [(0.5, 0.5), (32.5, 24.5), (63.5, 47.5)]:
         actual = readback.sample(channel, x, y)
         assert math.isclose(actual, value, abs_tol=1e-5), (channel, actual, value)
 print("MARIGOLD_PIXELS_OK", "NukeX:", nuke.env.get("nukex", "unknown"))
-print("MARIGOLD_NUKE_SMOKE_OK", node.Class(), sorted(node.knobs()))
+
+sys.path.insert(0, str(root / "nuke"))
+import marigold_nuke  # noqa: E402
+
+group = marigold_nuke.create()
+assert group is not None
+group.setInput(0, source)
+engine = group.node("INFERENCE")
+engine["autoStart"].setValue(False)
+engine["port"].setValue(port)
+engine["inputColorspace"].setValue(1)
+group["outputMode"].setValue(1)
+assert engine["outputMode"].getValue() == 1
+for red, expected_depth in ((0.2, -1.2), (0.9, 1.6)):
+    source["color"].setValue([red, 0.4, 0.8, 1])
+    engine["flipX"].setValue(True)
+    engine["flipY"].setValue(True)
+    engine["flipZ"].setValue(True)
+    write.setInput(0, group)
+    path = str(out / f"depth-{red}.exr").replace("\\", "/")
+    write["file"].setValue(path)
+    write["channels"].setValue("all")
+    nuke.execute(write, 1, 1)
+    result = nuke.nodes.Read(file=path, raw=True)
+    assert "depth.Z" in result.channels(), result.channels()
+    for channel in ("red", "green", "blue", "depth.Z"):
+        assert math.isclose(result.sample(channel, 32.5, 24.5), expected_depth, abs_tol=1e-5)
+group["outputMode"].setValue(0)
+assert math.isclose(sum(group.sample(c, 32.5, 24.5)**2 for c in ("red", "green", "blue")), 1, abs_tol=1e-5)
+nuke.scriptSave(str(out / "unified.nk"))
+nuke.scriptClear()
+nuke.scriptOpen(str(out / "unified.nk"))
+restored = nuke.toNode("MarigoldV2")
+restored["outputMode"].setValue(1)
+assert math.isclose(restored.sample("depth.Z", 32.5, 24.5), 1.6, abs_tol=1e-5)
+print("MARIGOLD_DEPTH_CHANNEL_AND_REOPEN_OK")
+print("MARIGOLD_NUKE_SMOKE_OK", restored.Class(), sorted(restored.knobs()))
 nuke.scriptSave(str(out / "synthetic.nk"))

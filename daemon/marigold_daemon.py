@@ -1,4 +1,4 @@
-"""Loopback-only resident Marigold V2 Normals engine."""
+"""Loopback-only resident Marigold V2 normals and depth engine."""
 
 import argparse
 import logging
@@ -8,7 +8,7 @@ import threading
 import time
 
 import numpy as np
-from image_ops import inference_size, normal_planes, prepare_rgb
+from image_ops import depth_planes, inference_size, normal_planes, prepare_rgb
 from protocol import PORT, ProtocolError, dimensions, pack_reply, read_request
 
 LOG = logging.getLogger("marigold")
@@ -24,8 +24,9 @@ class Engine:
 
     def info(self):
         return {
-            "engine": "Marigold V2 Normals",
+            "engine": "Marigold V2 Normals + Depth",
             "protocol": 1,
+            "tasks": ["normals", "depth"],
             "pid": os.getpid(),
             "state": self.state,
             "requests": self.count,
@@ -35,6 +36,9 @@ class Engine:
 
     def infer(self, header, data):
         w, h = dimensions(header)
+        task = header.get("task", "normals")
+        if task not in ("normals", "depth"):
+            raise ProtocolError("Task must be normals or depth")
         seed = header.get("seed", 2025)
         if type(seed) is not int or not 0 <= seed <= 2147483647:
             raise ProtocolError("Seed must be an integer in [0,2147483647]")
@@ -50,10 +54,10 @@ class Engine:
             started = time.monotonic()
             self.state = "loading / inferring"
             try:
-                normals = self.backend.predict(rgb, size, seed)
-                if normals.shape != (3, h, w):
+                prediction = self.backend.predict(rgb, size, seed, task=task)
+                if prediction.shape != (3 if task == "normals" else 1, h, w):
                     raise ValueError("Backend output must match source dimensions")
-                planes = normal_planes(normals, flips)
+                planes = normal_planes(prediction, flips) if task == "normals" else depth_planes(prediction)
                 self.count += 1
                 self.last_error = None
                 self.state = "model resident"
@@ -64,6 +68,8 @@ class Engine:
                     "source_size": [w, h],
                     "seed": seed,
                     "requests": self.count,
+                    "task": task,
+                    "representation": "camera_normals" if task == "normals" else "affine_invariant_log_depth",
                 }, planes.tobytes()
             except Exception as exc:
                 self.last_error = str(exc)

@@ -1,4 +1,4 @@
-"""MGV2 v1: little-endian float32 RGB request, planar XYZ/alpha response.
+"""MGV2 v1: RGB request, planar XYZ/alpha or raw log-depth RGB/alpha response.
 
 Request: 'MGV2', u32 JSON length, JSON, u32 data length, HWC RGB bytes.
 Reply: 'MGN2', i32 status, u32 W/H/C/JSON length, JSON, u32 data length, CHW bytes.
@@ -106,6 +106,8 @@ def request(header, payload=b"", port=PORT, timeout=600):
             ew, eh = dimensions(header)
             if (w, h, c, size) != (ew, eh, 4, ew * eh * 16):
                 raise ProtocolError("Reply image shape does not match request")
+            if header.get("task", "normals") == "depth" and metadata.get("task") != "depth":
+                raise ProtocolError("Daemon did not confirm depth output; update and restart the engine")
         elif (w, h, c, size) != (0, 0, 0, 0):
             raise ProtocolError("Control reply contains an unexpected image")
         return metadata, read_exact(conn, size)

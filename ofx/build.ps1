@@ -8,7 +8,8 @@
 #   ofx\build\MarigoldV2Normals.ofx.bundle\Contents\Win64\MarigoldV2Normals.ofx
 # install.ps1 at the repo root copies it into the OFX plugin directory.
 param(
-    [string]$Config = "Release"
+    [string]$Config = "Release",
+    [string]$BuildDirectory = "build"
 )
 $ErrorActionPreference = "Stop"
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -38,7 +39,7 @@ $ninja = Join-Path $vs "Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja\ninja
 if (-not (Test-Path $cmake)) { $cmake = "cmake" }
 if (-not (Test-Path $ninja)) { $ninja = "ninja" }
 
-$build = Join-Path $here "build"
+$build = Join-Path $here $BuildDirectory
 $script = @"
 @echo off
 call "$vcvars" >nul

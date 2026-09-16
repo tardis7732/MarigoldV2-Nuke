@@ -1,4 +1,5 @@
 import json
+import os
 import socket
 import struct
 import subprocess
@@ -10,7 +11,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 from fake_daemon import FixtureBackend
-from image_ops import inference_size, normal_planes, prepare_rgb
+from image_ops import depth_planes, inference_size, normal_planes, prepare_rgb
 from marigold_daemon import Engine, Server
 from protocol import ProtocolError, pack_reply, read_request, request
 
@@ -118,6 +119,37 @@ def test_round_trip_and_error_recovery(server):
     assert request({"cmd": "info"}, port=server.port)[0]["requests"] == 1
 
 
+def test_depth_preserves_range_and_ignores_normal_axis_flips(server):
+    rgb = np.random.default_rng(8).random((9, 13, 3), dtype=np.float32)
+    header = {"cmd": "infer", "width": 13, "height": 9, "task": "depth",
+              "flip_x": 1, "flip_y": 1, "flip_z": 1}
+    meta, data = request(header, rgb.tobytes(), port=server.port)
+    expected = depth_planes(FixtureBackend().predict(rgb, (16, 16), 2025, task="depth"))
+    assert expected[0].min() < 0 and expected[0].max() > 1
+    np.testing.assert_array_equal(np.frombuffer(data, "<f4").reshape(4, 9, 13), expected)
+    assert meta["task"] == "depth"
+    with pytest.raises(RuntimeError, match="Task"):
+        request({**header, "task": "unknown"}, rgb.tobytes(), port=server.port)
+
+
+def test_client_refuses_legacy_normals_as_depth():
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", 0))
+        listener.listen(1)
+        port = listener.getsockname()[1]
+        def send():
+            with listener.accept()[0] as conn:
+                read_request(conn)
+                conn.sendall(pack_reply(0, {}, 1, 1, 4, bytes(16)))
+        thread = threading.Thread(target=send)
+        thread.start()
+        try:
+            with pytest.raises(ProtocolError):
+                request({"cmd": "infer", "width": 1, "height": 1, "task": "depth"}, bytes(12), port=port)
+        finally:
+            thread.join(timeout=3)
+
+
 @pytest.mark.parametrize(
     "bad_reply",
     [
@@ -144,7 +176,7 @@ def test_client_rejects_bad_reply(bad_reply):
 
 
 def test_compiled_ofx_roundtrip_and_cache(server, tmp_path):
-    build = ROOT / "ofx/build"
+    build = Path(os.environ.get("MARIGOLD_OFX_BUILD_DIR", ROOT / "ofx/build"))
     host = build / "tests/mini_host.exe"
     plugin = build / "MarigoldV2Normals.ofx.bundle/Contents/Win64/MarigoldV2Normals.ofx"
     assert plugin.is_file() and host.is_file(), "Build the OFX before running integration tests"
@@ -215,7 +247,7 @@ def test_launcher_parent_lifecycle(tmp_path):
 
 
 def test_ofx_cancel_startup_wait_allows_retry(server, tmp_path, monkeypatch):
-    build = ROOT / "ofx/build"
+    build = Path(os.environ.get("MARIGOLD_OFX_BUILD_DIR", ROOT / "ofx/build"))
     host = build / "tests/mini_host.exe"
     plugin = build / "MarigoldV2Normals.ofx.bundle/Contents/Win64/MarigoldV2Normals.ofx"
     delayed = tmp_path / "delayed_start.py"
@@ -244,9 +276,9 @@ def test_ofx_cancel_startup_wait_allows_retry(server, tmp_path, monkeypatch):
     )
 
 
-@pytest.mark.parametrize("knob,value", [("seed", 123), ("resolution", 768), ("cacheRevision", 1)])
+@pytest.mark.parametrize("knob,value", [("seed", 123), ("resolution", 768), ("cacheRevision", 1), ("outputMode", 1)])
 def test_ofx_inference_knobs_invalidate_cache(server, tmp_path, knob, value):
-    build = ROOT / "ofx/build"
+    build = Path(os.environ.get("MARIGOLD_OFX_BUILD_DIR", ROOT / "ofx/build"))
     host = build / "tests/mini_host.exe"
     plugin = build / "MarigoldV2Normals.ofx.bundle/Contents/Win64/MarigoldV2Normals.ofx"
     src, dst, dst2 = (tmp_path / n for n in ("src.rgb", "a.rgba", "b.rgba"))

@@ -1,0 +1,164 @@
+version 17.1 v1
+Root {
+ inputs 0
+ last_frame 1
+ format "547 800 0 0 547 800 1 DepthComparison"
+ proxy_type scale
+ proxy_format "1024 778 0 0 1024 778 1 1K_Super_35(full-ap)"
+ colorManagement Nuke
+ workingSpaceLUT linear
+ monitorLut sRGB
+ monitorOutLUT rec709
+ int8Lut sRGB
+ int16Lut sRGB
+ logLut Cineon
+ floatLut linear
+}
+Read {
+ inputs 0
+ file_type jpeg
+ file "\[file dirname \[value root.name]]/sample.jpg"
+ raw true
+ name SOURCE
+ xpos -260
+}
+set N28c19200 [stack 0]
+Group {
+ name MARIGOLD_LIVE
+ label "Output: Normals / Depth\nLive model runs only when evaluated"
+ xpos 650
+ addUserKnob {20 marigold l "Marigold V2"}
+ addUserKnob {6 marigoldAdapter l "" -STARTLINE +HIDDEN}
+ addUserKnob {41 outputMode l output T INFERENCE.outputMode}
+ addUserKnob {41 resolution l "processing resolution" T INFERENCE.resolution}
+ addUserKnob {41 seed T INFERENCE.seed}
+ addUserKnob {41 inputColorspace l "input colorspace" T INFERENCE.inputColorspace}
+ addUserKnob {41 flipX l "flip normal X" T INFERENCE.flipX}
+ addUserKnob {41 flipY l "flip normal Y" T INFERENCE.flipY}
+ addUserKnob {41 flipZ l "flip normal Z" T INFERENCE.flipZ}
+ addUserKnob {41 cacheRevision l "cache revision" T INFERENCE.cacheRevision}
+ addUserKnob {26 outputHelp l "" +STARTLINE T "Normals: signed XYZ in RGB.\nDepth: raw relative log-depth in RGB and depth.Z.\nDepth increases with distance; it is not measured in metres.\nOnly the selected task is evaluated. Axis flips affect normals only."}
+ addUserKnob {20 setup l Setup}
+ addUserKnob {41 pythonExe l python T INFERENCE.pythonExe}
+ addUserKnob {41 daemonScript l "daemon script" T INFERENCE.daemonScript}
+ addUserKnob {41 port T INFERENCE.port}
+ addUserKnob {41 autoStart l "auto-start daemon" T INFERENCE.autoStart}
+ addUserKnob {41 exitWithHost l "daemon exits with Nuke" T INFERENCE.exitWithHost}
+}
+ Input {
+  inputs 0
+  name Source
+ }
+ OFXorg.marigoldv2.normals_v1 {
+  outputMode "Depth (relative log)"
+  resolution 0
+  seed 2025
+  inputColorspace "sRGB encoded"
+  flipX false
+  flipY false
+  flipZ false
+  cacheRevision 0
+  port 47822
+  autoStart true
+  exitWithHost true
+  name INFERENCE
+  selected true
+ }
+set N28c95e00 [stack 0]
+push $N28c95e00
+ Copy {
+  inputs 2
+  from0 rgba.red
+  to0 depth.Z
+  name DEPTH_CHANNEL
+  disable {{"parent.INFERENCE.outputMode != 1"}}
+ }
+ Output {
+  name Output1
+ }
+end_group
+set N28cd4000 [stack 0]
+Expression {
+ expr0 clamp((r-(-0.98046875))/(1.9746236205101013),0,1)
+ expr1 clamp((r-(-0.98046875))/(1.9746236205101013),0,1)
+ expr2 clamp((r-(-0.98046875))/(1.9746236205101013),0,1)
+ name LIVE_DEPTH_PREVIEW
+ label "Display only / this sample's fixed range"
+ xpos 650
+ ypos 180
+}
+Read {
+ inputs 0
+ file_type exr
+ file "\[file dirname \[value root.name]]/marigold_depth.exr"
+ raw true
+ in_colorspace scene_linear
+ out_colorspace scene_linear
+ name MARIGOLD_RAW
+ label "Relative log-depth / NOT metres"
+ xpos 300
+}
+Expression {
+ expr0 "a > 0.5 ? clamp((r-(-0.98046875))/(1.9746236205101013),0,1) : 0"
+ expr1 "a > 0.5 ? clamp((r-(-0.98046875))/(1.9746236205101013),0,1) : 0"
+ expr2 "a > 0.5 ? clamp((r-(-0.98046875))/(1.9746236205101013),0,1) : 0"
+ expr3 1
+ name MARIGOLD_PREVIEW
+ label "Display only / 2-98% log-depth / far=white"
+ xpos 300
+ ypos 180
+}
+Read {
+ inputs 0
+ file_type exr
+ file "\[file dirname \[value root.name]]/moge_depth.exr"
+ raw true
+ in_colorspace scene_linear
+ out_colorspace scene_linear
+ name MOGE_RAW
+ label "Metric depth estimate"
+ xpos 0
+}
+Expression {
+ expr0 "a > 0.5 ? clamp((log(max(r, 0.00000001))-(0.43306898772716523))/(0.5651764923334122),0,1) : 0"
+ expr1 "a > 0.5 ? clamp((log(max(r, 0.00000001))-(0.43306898772716523))/(0.5651764923334122),0,1) : 0"
+ expr2 "a > 0.5 ? clamp((log(max(r, 0.00000001))-(0.43306898772716523))/(0.5651764923334122),0,1) : 0"
+ expr3 1
+ name MOGE_PREVIEW
+ label "Display only / 2-98% log-depth / far=white"
+ xpos 0
+ ypos 180
+}
+push $N28c19200
+Viewer {
+ inputs 4
+ input_number 2
+ viewerProcess None
+ render_settings_schema false
+ name VIEW_DEPTH
+ xpos 260
+ ypos 480
+}
+push $N28cd4000
+Write {
+ channels all
+ file "\[file dirname \[value root.name]]/live_depth.exr"
+ file_type exr
+ datatype "32 bit float"
+ first_part rgba
+ raw true
+ ocioColorspace scene_linear
+ display default
+ view sRGB
+ name WRITE_RAW_DEPTH
+ xpos 920
+ ypos 180
+}
+StickyNote {
+ inputs 0
+ name DEPTH_GUIDE
+ label "DEPTH / SAME IMAGE, TWO MODELS\nViewer 1: source / 2: MoGe-3 / 3: Marigold / 4: LIVE (loads model)\nSaved results: no model needed. Use A/B Viewer inputs for wipe.\nBoth previews use log-depth with independent 2-98% ranges; far=white.\nRaw EXRs include depth.Z. Marigold depth is relative, NOT metres.\nWrite from the raw node; previews are for viewing only.\nIf LIVE Output changes to Normals, use XYZ*0.5+0.5 for preview."
+ note_font_size 20
+ xpos -260
+ ypos -260
+}

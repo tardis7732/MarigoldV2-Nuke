@@ -26,12 +26,28 @@ RGB stores the XYZ direction of the surface normal, in −1…+1. The Expression
 
 ## OFX controls
 
+The menu creates one **Marigold V2** node with **output = Normals / Depth** and a separate **Setup** tab, following MoGe-nuke's layout. Only the selected task runs. Old standalone OFX examples remain valid and default to Normals.
+
+메뉴에서는 노드 하나를 만들고 `output`에서 **Normals / Depth**를 선택합니다. 동시에 두 모델을 계산하지 않습니다. Depth 모드의 RGB와 `depth.Z`는 같은 원본 상대 log-depth 값입니다. 값이 클수록 멀지만 미터 단위는 아닙니다. Normal 축 반전은 Depth에 적용되지 않습니다.
+
+| Internal node | Role |
+|---|---|
+| `Source` | Group input |
+| `INFERENCE` | Native OFX; runs the selected task and caches the result |
+| `DEPTH_CHANNEL` | Copies raw red to `depth.Z` in Depth mode; bypassed for Normals |
+| `Output` | Group output |
+
+Save Depth using **EXR / all channels / 32-bit float / raw**. Put a Grade/Expression on a separate viewing branch to map near/far to 0–1. Export from the raw branch. [Depth example and interpretation](DEPTH_COMPARISON.md).
+
+### Controls
+
 | Control | Default | Meaning |
 |---|---|---|
+| `outputMode` | Normals | Normals: signed XYZ RGB. Depth: raw relative Log-stage2 depth RGB; menu node also supplies `depth.Z`. |
 | `resolution` | 512 | Inference long edge; 0 native. Sizes snap to multiples of 16. Output returns to input dimensions. |
 | `seed` | 2025 | Random seed reset per inference; does not guarantee temporal stability. |
 | `inputColorspace` | sRGB encoded | Encoded sRGB input, or linear RGB with Rec.709 primaries and an sRGB transfer conversion. |
-| `flipX/Y/Z` | Off | Negate an axis for downstream coordinate conventions. |
+| `flipX/Y/Z` | Off | Negate a normal axis; ignored in Depth mode. |
 | `cacheRevision` | 0 | Increment to invalidate cached inference. |
 | `pythonExe` | Installer-generated | External Python for the launcher. |
 | `daemonScript` | Installer-generated | Project `daemon/launcher.py`. |

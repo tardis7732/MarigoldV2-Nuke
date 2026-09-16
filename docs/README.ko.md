@@ -1,6 +1,15 @@
-# Marigold V2 Normals for Nuke
+# Marigold V2 for Nuke
 
-이미지와 영상 시퀀스의 표면 법선을 계산하는 Nuke OFX 플러그인입니다. 외부 Python 데몬에서 GPU로 모델을 실행합니다.
+이미지와 영상 시퀀스의 **표면 법선과 상대 Depth**를 계산하는 Nuke 노드입니다. MoGe-nuke처럼 한 노드의 **output에서 Normals / Depth**를 선택합니다. 선택한 작업만 외부 Python 데몬에서 GPU로 실행합니다.
+
+| Output | 출력 | 활용 |
+|---|---|---|
+| Normals | RGB에 signed XYZ | 리라이팅, 방향별 마스크 |
+| Depth | RGB와 `depth.Z`에 원본 상대 log-depth | 깊이 마스크, 값을 조정한 뎁스 효과 |
+
+Depth 값은 클수록 멀지만 **미터 단위 거리가 아닙니다**. 이미지마다 스케일과 오프셋이 달라질 수 있습니다. 원본 데이터는 그대로 저장하고, 보기 위한 0~1 변환은 별도 브랜치에서 합니다. [Depth 비교·사용법](DEPTH_COMPARISON.md).
+
+![실제 Nuke Depth 화면과 선택한 Marigold 노드의 Properties](media/nuke-depth.png)
 
 [메인 README](../README.md) · [다운로드](https://github.com/tardis7732/MarigoldV2-Nuke/releases/latest) · [노드 설명](NODES.md)
 
@@ -25,16 +34,25 @@ powershell -ExecutionPolicy Bypass -File tools/setup_windows.ps1
 powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
-모델 다운로드는 약 43GB입니다. 소스 빌드에는 Visual Studio C++ Build Tools가 필요합니다. 빌드 대신 Release의 `MarigoldV2-Nuke-Windows-x64.zip`을 프로젝트 폴더에 풀고 `install.ps1 -SkipBuild`를 실행할 수 있습니다.
+모델 두 종류의 다운로드는 약 45GB입니다. 소스 빌드에는 Visual Studio C++ Build Tools가 필요합니다. 빌드 대신 Release의 `MarigoldV2-Nuke-Windows-x64.zip`을 프로젝트 폴더에 풀고 `install.ps1 -SkipBuild`를 실행할 수 있습니다.
 
-설치 후 Nuke를 재시작하면 **Nodes → ML → Marigold V2 → Normals** 메뉴가 생깁니다.
+설치 후 Nuke를 재시작하면 **Nodes → ML → Marigold V2 → Marigold V2** 메뉴가 생깁니다. main 탭에서 output·해상도·seed를, Setup 탭에서 실행 환경을 설정합니다.
+
+기존 사용자는 코드와 바이너리를 업데이트하고 아래 명령으로 Depth 가중치를 추가한 뒤 엔진과 Nuke를 재시작하세요. assets 경로가 다르면 실제 설정에 맞춰 변경합니다.
+
+```powershell
+.venv-engine/Scripts/python.exe tools/download_normals.py --assets assets --task depth
+```
+
+기존 OFX 노드는 기본 Normals 동작을 유지합니다. `depth.Z` 자동 출력을 사용하려면 메뉴에서 새 노드를 만드세요. Depth는 **EXR / all channels / 32-bit float / raw**로 저장합니다. ZDefocus 같은 거리 기반 효과에는 작업에 맞는 값 변환이 필요합니다.
 
 ## 예제
 
-Release의 `MarigoldV2-Nuke-examples.zip`을 프로젝트 폴더에 풀어 주세요.
+v0.1.0의 `MarigoldV2-Nuke-examples.zip` 또는 v0.2.0의 `MarigoldV2-Nuke-depth-comparison.zip`을 프로젝트 폴더에 풀어 주세요.
 
 - `examples/Normals_Still.nk`: 교회 이미지와 실제 계산된 Normal.
 - `examples/video_demo/Normals_Video.nk`: 4초·12fps·48프레임 영상 예제.
+- `examples/depth_comparison/Depth_Comparison.nk`: 같은 케이크 이미지의 두 모델 Depth, 원본 EXR, 표시용 변환, 새 통합 노드.
 - Viewer **1: 저장된 결과 / 2: 원본 / 3: 실시간 재계산**.
 - 저장된 결과는 모델을 로딩하지 않고 볼 수 있습니다. 라이브 노드를 인식하려면 OFX 설치는 필요합니다.
 

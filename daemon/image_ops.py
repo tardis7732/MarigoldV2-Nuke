@@ -34,3 +34,13 @@ def normal_planes(normals, flips=(False, False, False)):
     return np.ascontiguousarray(
         np.concatenate([normals, np.ones((1, *normals.shape[1:]), dtype=np.float32)]), dtype="<f4"
     )
+
+
+def depth_planes(depth):
+    """Transport raw relative log-depth in RGB; alpha is validity, not depth."""
+    depth = np.asarray(depth, dtype=np.float32)
+    if depth.ndim != 3 or depth.shape[0] != 1 or not np.isfinite(depth).all():
+        raise ValueError("Model must return finite depth with shape [1,H,W]")
+    return np.ascontiguousarray(
+        np.concatenate([np.repeat(depth, 3, axis=0), np.ones_like(depth)]), dtype="<f4"
+    )
